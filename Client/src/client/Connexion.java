@@ -13,6 +13,7 @@ import java.util.Scanner;
  * @author gambicca
  */
 public class Connexion {
+
     /**
      * @param args the command line arguments
      */
@@ -24,17 +25,18 @@ public class Connexion {
         client.connect("127.0.0.1", 8080);
         System.out.println("Ecrivez un message. #disconnect pour se déconnecter, "
                 + "#list pour afficher la liste de clients connectés");
-        
+
         Scanner scanner = new Scanner(System.in);
         boolean connecte = true;
         while (connecte) {
+            //client.receiveMsg();
             String message = scanner.next();
             message += scanner.nextLine();
             if (message.startsWith("#")) {
                 switch (message.substring(1).toLowerCase()) {
                     case "disconnect": {
                         client.disconnect();
-                        connecte=false;
+                        connecte = false;
                         break;
                     }
                     case "list": {
@@ -42,8 +44,7 @@ public class Connexion {
                         break;
                     }
                 }
-            }
-            else {
+            } else {
                 //System.out.println(client.getPseudo() + " : " + message);
                 client.sendMessage(message);
             }

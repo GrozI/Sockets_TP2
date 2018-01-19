@@ -25,10 +25,13 @@ import java.util.stream.Stream;
  * @author gambicca
  */
 public class Client {
+
     String pseudo;
     ArrayList<String> clientsConnectes = new ArrayList<String>();
     SocketChannel socketC;
-    public void connect(String hostname, int port) throws IOException{
+    int cmpt;
+
+    public void connect(String hostname, int port) throws IOException {
         //ouverture socket client serveur
         socketC = SocketChannel.open();
         socketC.connect(new InetSocketAddress(hostname, port));
@@ -41,20 +44,22 @@ public class Client {
         //    receiveClientsConnectes();
         //    size--;
         //}
-        if (socketC!=null){
+        if (socketC != null) {
             receiveClientsConnectes();
         }
-        
+
         //System.out.println(clientsConnectes);
     }
-    public void sendPseudo() throws IOException{
+
+    public void sendPseudo() throws IOException {
         CharBuffer c = CharBuffer.wrap(pseudo);
         CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
         ByteBuffer buf = encoder.encode(c);
         socketC.write(buf);
-        
+
     }
-    public int receiveNbClients() throws IOException{
+
+    public int receiveNbClients() throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(20);
         int bytesRead = socketC.read(buffer);
         String sizename = new String(buffer.array(), "UTF-8");
@@ -63,52 +68,88 @@ public class Client {
         return size;
 
     }
-    public void receiveClientsConnectes() throws IOException{
+
+    public void receiveMsg() throws IOException {
+        try {
+            ByteBuffer buffer = ByteBuffer.allocate(10000);
+            int bytesRead = socketC.read(buffer);
+            String msg = new String(buffer.array(), "UTF-8");
+            int compteur = Integer.parseInt(msg.substring(0, msg.indexOf("#")));
+
+            if (cmpt == compteur - 1) {
+                cmpt = compteur;
+                sendLastAck();
+                msg = msg.substring(msg.indexOf("#") + 1);
+                System.out.println(msg);
+            } else {
+                sendLastAck();
+
+            }
+
+        } catch (IOException e) {
+            System.out.println("");
+        }
+
+    }
+
+    public void sendLastAck() throws CharacterCodingException, IOException {
+        String msg = "#" + cmpt;
+        CharBuffer c = CharBuffer.wrap(msg);
+        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+        ByteBuffer buf = encoder.encode(c);
+        socketC.write(buf);
+
+    }
+
+    public void receiveClientsConnectes() throws IOException {
         //le serveur envoie d'abord le nombre de clients connectés
         ByteBuffer buffer;
         buffer = ByteBuffer.allocate(124);
         int bytesRead = socketC.read(buffer);
-        if (bytesRead >0){
+        if (bytesRead > 0) {
             //System.out.println("bytesRead");
             String name = new String(buffer.array(), "UTF-8");
             //System.out.println(name);
             String[] namelist = name.split(" ");
             //System.out.println(Arrays.toString(name.split(" ")));
-            for (int i=0;i<namelist.length-1;i++){
+            for (int i = 0; i < namelist.length - 1; i++) {
                 clientsConnectes.add(namelist[i].trim());
             }
             //System.out.println(clientsConnectes);
         }
     }
-    public void setPseudo(){
+
+    public void setPseudo() {
         Scanner scanner = new Scanner(System.in);
         String ps;
         System.out.println("Choisissez un pseudo (8 caractères max).");
         ps = scanner.next();
-        if (clientsConnectes.contains(ps)){
+        if (clientsConnectes.contains(ps)) {
             System.out.println("Pseudo déjà pris. Rééssayez.");
             setPseudo();
-        }
-        else{
+        } else {
             pseudo = ps;
             System.out.println("Ok");
         }
     }
-    public String getPseudo(){
+
+    public String getPseudo() {
         return this.pseudo;
     }
 
-    public void sendMessage(String msg) throws CharacterCodingException, IOException{
+    public void sendMessage(String msg) throws CharacterCodingException, IOException {
         CharBuffer c = CharBuffer.wrap(msg);
         CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
         ByteBuffer buf = encoder.encode(c);
         socketC.write(buf);
-        
+
     }
-    public void printList(){
+
+    public void printList() {
         System.out.println(clientsConnectes);
     }
-    public void disconnect() throws IOException{
+
+    public void disconnect() throws IOException {
         CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
         CharBuffer c = CharBuffer.wrap("#disconnect");
         ByteBuffer buf = ByteBuffer.allocate(20);
