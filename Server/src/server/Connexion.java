@@ -18,7 +18,8 @@ public class Connexion {
     public static void main(String[] args) throws IOException {
         // TODO code application logic here
         Server server = new Server();
-        server.connect(8080);
+        server.initialize(8080);
+        
     }
     
 }
