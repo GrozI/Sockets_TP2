@@ -37,18 +37,9 @@ public class Client {
         socketC.connect(new InetSocketAddress(hostname, port));
         //envoi pseudo au serveur
         sendPseudo();
-        //reception listeclient[pseudo]
-        //int size = receiveNbClients();
-        //System.out.println(size);
-        //while ((socketC != null)&& (size>0)){
-        //    receiveClientsConnectes();
-        //    size--;
-        //}
         if (socketC != null) {
             receiveClientsConnectes();
         }
-
-        //System.out.println(clientsConnectes);
     }
 
     public void sendPseudo() throws IOException {
@@ -71,21 +62,28 @@ public class Client {
 
     public void receiveMsg() throws IOException {
         try {
-            ByteBuffer buffer = ByteBuffer.allocate(10000);
+            ByteBuffer buffer = ByteBuffer.allocate(20000);
             int bytesRead = socketC.read(buffer);
+            if (bytesRead !=0){
             String msg = new String(buffer.array(), "UTF-8");
-            int compteur = Integer.parseInt(msg.substring(0, msg.indexOf("#")));
-
-            if (cmpt == compteur - 1) {
-                cmpt = compteur;
-                sendLastAck();
-                msg = msg.substring(msg.indexOf("#") + 1);
+            msg = msg.trim();
+            if (msg.startsWith("#list")) {
                 System.out.println(msg);
-            } else {
-                sendLastAck();
+                
+            } else if (msg.contains("#")){
+                int compteur = Integer.parseInt(msg.substring(0, msg.indexOf("#")));
 
+                if (cmpt == compteur - 1) {
+                    cmpt = compteur;
+                    //sendLastAck();
+                    msg = msg.substring(msg.indexOf("#") + 1);
+                    System.out.println(msg);
+                } else {
+                    sendLastAck();
+
+                }
             }
-
+            }
         } catch (IOException e) {
             System.out.println("");
         }
@@ -107,15 +105,11 @@ public class Client {
         buffer = ByteBuffer.allocate(124);
         int bytesRead = socketC.read(buffer);
         if (bytesRead > 0) {
-            //System.out.println("bytesRead");
             String name = new String(buffer.array(), "UTF-8");
-            //System.out.println(name);
             String[] namelist = name.split(" ");
-            //System.out.println(Arrays.toString(name.split(" ")));
             for (int i = 0; i < namelist.length - 1; i++) {
                 clientsConnectes.add(namelist[i].trim());
             }
-            //System.out.println(clientsConnectes);
         }
     }
 
@@ -147,6 +141,14 @@ public class Client {
 
     public void printList() {
         System.out.println(clientsConnectes);
+    }
+
+    public void receiveList() throws CharacterCodingException, IOException {
+        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+        CharBuffer c = CharBuffer.wrap("#list");
+        ByteBuffer buf = ByteBuffer.allocate(20);
+        buf = encoder.encode(c);
+        socketC.write(buf);
     }
 
     public void disconnect() throws IOException {

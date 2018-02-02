@@ -25,7 +25,8 @@ public class Connexion {
         client.connect("127.0.0.1", 8080);
         System.out.println("Ecrivez un message. #disconnect pour se déconnecter, "
                 + "#list pour afficher la liste de clients connectés");
-
+        ListenThread thread = new ListenThread(client);
+        thread.start();
         Scanner scanner = new Scanner(System.in);
         boolean connecte = true;
         while (connecte) {
@@ -40,7 +41,8 @@ public class Connexion {
                         break;
                     }
                     case "list": {
-                        client.printList();
+                        //client.printList();
+                        client.receiveList();
                         break;
                     }
                 }
