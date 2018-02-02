@@ -38,11 +38,12 @@ public class Connexion {
                     case "disconnect": {
                         client.disconnect();
                         connecte = false;
+                        thread.interrupt();
                         break;
                     }
                     case "list": {
                         //client.printList();
-                        client.receiveList();
+                        client.askList();
                         break;
                     }
                 }

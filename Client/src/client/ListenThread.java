@@ -29,7 +29,6 @@ public class ListenThread extends Thread {
         } catch (IOException ex) {
             Logger.getLogger(ListenThread.class.getName()).log(Level.SEVERE, null, ex);
         } catch (InterruptedException ex) {
-            Logger.getLogger(ListenThread.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }

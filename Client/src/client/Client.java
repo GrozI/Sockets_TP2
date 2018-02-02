@@ -37,9 +37,6 @@ public class Client {
         socketC.connect(new InetSocketAddress(hostname, port));
         //envoi pseudo au serveur
         sendPseudo();
-        if (socketC != null) {
-            receiveClientsConnectes();
-        }
     }
 
     public void sendPseudo() throws IOException {
@@ -64,13 +61,12 @@ public class Client {
         try {
             ByteBuffer buffer = ByteBuffer.allocate(20000);
             int bytesRead = socketC.read(buffer);
-            if (bytesRead !=0){
+            if (bytesRead >0){
             String msg = new String(buffer.array(), "UTF-8");
             msg = msg.trim();
-            if (msg.startsWith("#list")) {
-                System.out.println(msg);
-                
-            } else if (msg.contains("#")){
+            if (msg.startsWith("#list")){
+                System.out.println(msg.substring(5));
+            }else if (msg.contains("#")){
                 int compteur = Integer.parseInt(msg.substring(0, msg.indexOf("#")));
 
                 if (cmpt == compteur - 1) {
@@ -143,7 +139,7 @@ public class Client {
         System.out.println(clientsConnectes);
     }
 
-    public void receiveList() throws CharacterCodingException, IOException {
+    public void askList() throws CharacterCodingException, IOException {
         CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
         CharBuffer c = CharBuffer.wrap("#list");
         ByteBuffer buf = ByteBuffer.allocate(20);
@@ -154,9 +150,9 @@ public class Client {
     public void disconnect() throws IOException {
         CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
         CharBuffer c = CharBuffer.wrap("#disconnect");
-        ByteBuffer buf = ByteBuffer.allocate(20);
+        ByteBuffer buf = ByteBuffer.allocate(200);
         buf = encoder.encode(c);
         socketC.write(buf);
-        socketC.socket().close();
+        socketC.close();
     }
 }
