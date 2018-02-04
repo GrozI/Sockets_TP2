@@ -20,13 +20,12 @@ public class Connexion {
     public static void main(String[] args) throws IOException {
         // TODO code application logic here
         Client client = new Client();
-        System.out.println("Bonjour !");
-        client.setPseudo();
+        //System.out.println("Bonjour !");
+        //client.setPseudo();
         client.connect("127.0.0.1", 8080);
-        System.out.println("Ecrivez un message. #disconnect pour se déconnecter, "
-                + "#list pour afficher la liste de clients connectés");
-        ListenThread thread = new ListenThread(client);
-        thread.start();
+
+        Thread t = new Thread(new ListenThread(client));
+        t.start();
         Scanner scanner = new Scanner(System.in);
         boolean connecte = true;
         while (connecte) {
@@ -38,7 +37,7 @@ public class Connexion {
                     case "disconnect": {
                         client.disconnect();
                         connecte = false;
-                        thread.interrupt();
+                        t.interrupt();
                         break;
                     }
                     case "list": {

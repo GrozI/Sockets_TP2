@@ -6,6 +6,13 @@
 package client;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,10 +20,11 @@ import java.util.logging.Logger;
  *
  * @author Agathe
  */
-public class ListenThread extends Thread {
+public class ListenThread implements Runnable {
+
     private Client client;
-    
-    public ListenThread(Client client){
+
+    public ListenThread(Client client) {
         this.client = client;
     }
     public void run(){

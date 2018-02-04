@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.*;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -26,17 +28,17 @@ import java.util.stream.Stream;
  */
 public class Client {
 
-    String pseudo;
-    ArrayList<String> clientsConnectes = new ArrayList<String>();
-    SocketChannel socketC;
-    int cmpt;
+    private String pseudo= null;
+    private ArrayList<String> clientsConnectes = new ArrayList<String>();
+    private SocketChannel socketC = null;
+    private int cmpt = 0;
+    private Selector selector = null;
 
     public void connect(String hostname, int port) throws IOException {
         //ouverture socket client serveur
         socketC = SocketChannel.open();
         socketC.connect(new InetSocketAddress(hostname, port));
-        //envoi pseudo au serveur
-        sendPseudo();
+        socketC.configureBlocking(false);        
     }
 
     public void sendPseudo() throws IOException {
@@ -61,24 +63,26 @@ public class Client {
         try {
             ByteBuffer buffer = ByteBuffer.allocate(20000);
             int bytesRead = socketC.read(buffer);
-            if (bytesRead >0){
-            String msg = new String(buffer.array(), "UTF-8");
-            msg = msg.trim();
-            if (msg.startsWith("#list")){
-                System.out.println(msg.substring(5));
-            }else if (msg.contains("#")){
-                int compteur = Integer.parseInt(msg.substring(0, msg.indexOf("#")));
-
-                if (cmpt == compteur - 1) {
-                    cmpt = compteur;
-                    //sendLastAck();
-                    msg = msg.substring(msg.indexOf("#") + 1);
-                    System.out.println(msg);
-                } else {
-                    sendLastAck();
-
+            if (bytesRead > 0) {
+                String msg = new String(buffer.array(), "UTF-8");
+                msg = msg.trim();
+                System.out.println(msg);
+                if (msg.startsWith("#list")) {
+                    System.out.println(msg.substring(5));
                 }
-            }
+//            else if (msg.contains("#")){
+//                int compteur = Integer.parseInt(msg.substring(0, msg.indexOf("#")));
+//
+//                if (cmpt == compteur - 1) {
+//                    cmpt = compteur;
+//                    //sendLastAck();
+//                    msg = msg.substring(msg.indexOf("#") + 1);
+//                    System.out.println(msg);
+//                } else {
+//                    sendLastAck();
+//
+//                }
+//            }
             }
         } catch (IOException e) {
             System.out.println("");
@@ -126,7 +130,9 @@ public class Client {
     public String getPseudo() {
         return this.pseudo;
     }
-
+    public Selector getSelector(){
+        return this.selector;
+    }
     public void sendMessage(String msg) throws CharacterCodingException, IOException {
         CharBuffer c = CharBuffer.wrap(msg);
         CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
