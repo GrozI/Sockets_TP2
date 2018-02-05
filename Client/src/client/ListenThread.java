@@ -31,7 +31,7 @@ public class ListenThread implements Runnable {
         try {
             //System.out.println("MyThread running");
             while (true){
-            Thread.sleep(1000);
+            Thread.sleep(100);
             client.receiveMsg();
         }
         } catch (IOException ex) {

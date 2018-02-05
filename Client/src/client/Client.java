@@ -28,35 +28,14 @@ import java.util.stream.Stream;
  */
 public class Client {
 
-    private String pseudo= null;
-    private ArrayList<String> clientsConnectes = new ArrayList<String>();
     private SocketChannel socketC = null;
     private int cmpt = 0;
-    private Selector selector = null;
 
     public void connect(String hostname, int port) throws IOException {
         //ouverture socket client serveur
         socketC = SocketChannel.open();
         socketC.connect(new InetSocketAddress(hostname, port));
-        socketC.configureBlocking(false);        
-    }
-
-    public void sendPseudo() throws IOException {
-        CharBuffer c = CharBuffer.wrap(pseudo);
-        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-        ByteBuffer buf = encoder.encode(c);
-        socketC.write(buf);
-
-    }
-
-    public int receiveNbClients() throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(20);
-        int bytesRead = socketC.read(buffer);
-        String sizename = new String(buffer.array(), "UTF-8");
-        int size = Integer.parseInt(sizename.trim());
-
-        return size;
-
+        socketC.configureBlocking(false);
     }
 
     public void receiveMsg() throws IOException {
@@ -99,58 +78,12 @@ public class Client {
 
     }
 
-    public void receiveClientsConnectes() throws IOException {
-        //le serveur envoie d'abord le nombre de clients connectés
-        ByteBuffer buffer;
-        buffer = ByteBuffer.allocate(124);
-        int bytesRead = socketC.read(buffer);
-        if (bytesRead > 0) {
-            String name = new String(buffer.array(), "UTF-8");
-            String[] namelist = name.split(" ");
-            for (int i = 0; i < namelist.length - 1; i++) {
-                clientsConnectes.add(namelist[i].trim());
-            }
-        }
-    }
-
-    public void setPseudo() {
-        Scanner scanner = new Scanner(System.in);
-        String ps;
-        System.out.println("Choisissez un pseudo (8 caractères max).");
-        ps = scanner.next();
-        if (clientsConnectes.contains(ps)) {
-            System.out.println("Pseudo déjà pris. Rééssayez.");
-            setPseudo();
-        } else {
-            pseudo = ps;
-            System.out.println("Ok");
-        }
-    }
-
-    public String getPseudo() {
-        return this.pseudo;
-    }
-    public Selector getSelector(){
-        return this.selector;
-    }
     public void sendMessage(String msg) throws CharacterCodingException, IOException {
         CharBuffer c = CharBuffer.wrap(msg);
         CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
         ByteBuffer buf = encoder.encode(c);
         socketC.write(buf);
 
-    }
-
-    public void printList() {
-        System.out.println(clientsConnectes);
-    }
-
-    public void askList() throws CharacterCodingException, IOException {
-        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-        CharBuffer c = CharBuffer.wrap("#list");
-        ByteBuffer buf = ByteBuffer.allocate(20);
-        buf = encoder.encode(c);
-        socketC.write(buf);
     }
 
     public void disconnect() throws IOException {
