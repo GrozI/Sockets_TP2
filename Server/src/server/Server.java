@@ -113,8 +113,8 @@ public class Server {
                 socket.write(buf);
             } else {
                 users.put(socket, message);
-                String welcome = "Bienvenue ! Ecrivez un message. #disconnect pour se déconnecter, "
-                        + "#list pour afficher la liste de clients connectés";
+                String welcome = "Bienvenue ! Ecrivez un message. Pour afficher la liste"
+                        + " des commandes, tapez #.";
                 CharBuffer c = CharBuffer.wrap(welcome);
                 CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
                 ByteBuffer buf = encoder.encode(c);
@@ -171,7 +171,7 @@ public class Server {
 
         CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
         CharBuffer c = null;
-        String nameList = "#list";
+        String nameList = "#list_u";
         nameList = "";
         for (String name : users.values()) {
             nameList = nameList + name + " ";
