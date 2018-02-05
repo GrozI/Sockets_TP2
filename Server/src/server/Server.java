@@ -36,13 +36,15 @@ import java.util.Set;
 public class Server {
 
     private Selector selector = null;
-    private Map<String, SocketChannel> clients = new HashMap<String, SocketChannel>();
-
     private ServerSocketChannel socketSC = null;
-    private Map Channels = new HashMap();
     private int cmpt = 1;
     private List<Message> messageList = new ArrayList<Message>();
+    //Map SocketChannel de l'utilisateur <-> pseudo
     private static Map<SocketChannel, String> users = new HashMap<SocketChannel, String>();
+    //Map SocketChannel de l'admin <-> nom de la chatroom
+    private Map<SocketChannel, String> chatrooms = new HashMap<SocketChannel, String>();
+    //Map SocketChannel utilisateurs connectes <-> String nom chatroom
+    private Map<SocketChannel, String> usersInChatroom = new HashMap<SocketChannel, String>();
 
     public void initialize(int port) throws IOException, InterruptedException {
         selector = Selector.open();
@@ -50,22 +52,18 @@ public class Server {
         serverSocket.bind(new InetSocketAddress("localhost", 8080));
         serverSocket.configureBlocking(false);
         serverSocket.register(selector, SelectionKey.OP_ACCEPT);
-        ByteBuffer buffer = ByteBuffer.allocate(256);
 
         while (true) {
             selector.select();
             Set<SelectionKey> selectedKeys = selector.selectedKeys();
             Iterator<SelectionKey> iter = selectedKeys.iterator();
             while (iter.hasNext()) {
-
                 SelectionKey key = iter.next();
-
                 handleKey(socketSC, key);
                 iter.remove();
             }
         }
     }
-
 
     public void handleKey(ServerSocketChannel ssc, SelectionKey key) throws IOException, InterruptedException {
         if (key.isAcceptable()) {
@@ -94,12 +92,8 @@ public class Server {
         String message = new String(msg.array(), "UTF-8");
         message = message.trim();
         if (users.containsKey(socket)) {
-            if (message.startsWith("#disconnect")) {
-                removeUser(socket);
-                socket.close();
-            }
-            if (message.startsWith("#list")) {
-                sendList(socket);
+            if (message.startsWith("#")) {
+                handleCmd(socket, message);
             } else {
                 Message m = handleMessage(socket, message);
                 broadcastMessage(m);
@@ -128,6 +122,41 @@ public class Server {
         String pseudo = users.get(socket);
         Message m = new Message(cmpt, pseudo, message);
         return m;
+    }
+
+    public void handleCmd(SocketChannel socket, String message) throws IOException {
+        if (message.length() == 1) {
+            String cmd = "LISTE DES COMMANDES :\n"
+                    + "------------------------------\n"
+                    + "#disconnect \t: se déconnecter \n"
+                    + "#list_u \t: afficher la liste des utilisateurs connectés \n"
+                    + "#list_c \t: afficher la liste des chatrooms ouvertes \n"
+                    + "#create A \t: créer la chatroom A \n"
+                    + "#join A \t: rejoindre la chatroom A \n"
+                    + "------------------------------\n";
+            CharBuffer c = CharBuffer.wrap(cmd);
+            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+            ByteBuffer buf = encoder.encode(c);
+            socket.write(buf);
+        } else if (message.startsWith("#disconnect")) {
+            removeUser(socket);
+            socket.close();
+        } else if (message.startsWith("#list_u")) {
+            sendList(socket);
+        } else if (message.startsWith("#list_c")) {
+            
+        } else if (message.startsWith("#join")) {
+            
+        } else if (message.startsWith("#create")) {
+            
+        } else {
+            String error = "Commande non reconnue. Taper # pour "
+                                    + "afficher la liste des commandes.";
+            CharBuffer c = CharBuffer.wrap(error);
+            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+            ByteBuffer buf = encoder.encode(c);
+            socket.write(buf);
+        }
     }
 
     public void broadcastMessage(Message m) throws CharacterCodingException, IOException {
@@ -182,12 +211,10 @@ public class Server {
         socket.write(buf);
     }
 
-
     public void removeUser(SocketChannel socket) throws IOException {
         String username = users.get(socket);
         users.remove(socket);
         broadcastServerMessage(username + " s'est déconnecté.");
     }
 
-    
 }
