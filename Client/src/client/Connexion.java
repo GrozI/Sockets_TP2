@@ -33,21 +33,35 @@ public class Connexion {
             String message = scanner.next();
             message += scanner.nextLine();
             if (message.startsWith("#")) {
-                switch (message.substring(1).toLowerCase()) {
-                    case "disconnect": {
-                        client.disconnect();
-                        connecte = false;
-                        t.interrupt();
-                        break;
-                    }
-                    case "list": {
-                        //client.printList();
-                        client.askList();
-                        break;
+                if (message.length() == 1) {
+                    System.out.println("LISTE DES COMMANDES :\n"
+                            + "------------------------------\n"
+                            + "#disconnect \t: se déconnecter \n"
+                            + "#list_u \t: afficher la liste des utilisateurs connectés \n"
+                            + "#list_c \t: afficher la liste des chatrooms ouvertes \n"
+                            + "#create A \t: créer la chatroom A \n"
+                            + "#join A \t: rejoindre la chatroom A \n"
+                            + "------------------------------\n");
+                } else {
+                    switch (message.substring(1).toLowerCase()) {
+                        case "disconnect": {
+                            client.disconnect();
+                            connecte = false;
+                            t.interrupt();
+                            break;
+                        }
+                        case "list_u": {
+                            //client.printList();
+                            client.askList();
+                            break;
+                        }
+                        default: {
+                            System.out.println("Commande non reconnue. Taper # pour "
+                                    + "afficher la liste des commandes.");
+                        }
                     }
                 }
             } else {
-                //System.out.println(client.getPseudo() + " : " + message);
                 client.sendMessage(message);
             }
         }

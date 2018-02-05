@@ -67,8 +67,8 @@ public class Client {
                 String msg = new String(buffer.array(), "UTF-8");
                 msg = msg.trim();
                 System.out.println(msg);
-                if (msg.startsWith("#list")) {
-                    System.out.println(msg.substring(5));
+                if (msg.startsWith("#list_u")) {
+                    System.out.println(msg.substring(7));
                 }
 //            else if (msg.contains("#")){
 //                int compteur = Integer.parseInt(msg.substring(0, msg.indexOf("#")));
