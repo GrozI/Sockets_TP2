@@ -172,6 +172,7 @@ public class Server {
             //on rajoute l'utilisateur comme admin
             if (!chatrooms.containsKey(chatroom)) {
                 chatrooms.putIfAbsent(chatroom, socket);
+                usersInChatroom.put(socket, chatroom);
             } else {
                 String error = "Une chatroom existe déjà sous ce nom. Peut-être vouliez-vous la rejoindre ?";
                 CharBuffer c = CharBuffer.wrap(error);
