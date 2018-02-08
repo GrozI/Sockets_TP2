@@ -74,13 +74,6 @@ public class Server {
             //key.interestOps(SelectionKey.OP_ACCEPT);
             String welcome = "Bonjour ! Veuillez choisir un pseudo.";
             sendMessage(sc, welcome);
-//            CharBuffer c = CharBuffer.wrap(welcome);
-//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//            ByteBuffer buf = encoder.encode(c);
-//            try {
-//                sc.write(buf);
-//            } catch (Exception e) {
-//            }
 
         } else if (key.isReadable()) {
             SocketChannel sc = (SocketChannel) key.channel();
@@ -114,19 +107,11 @@ public class Server {
             if (users.containsValue(message)) {
                 String alert = "Le pseudo est déjà pris. Merci d'en choisir un autre.";
                 sendMessage(socket, alert);
-//                CharBuffer c = CharBuffer.wrap(alert);
-//                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//                ByteBuffer buf = encoder.encode(c);
-//                socket.write(buf);
             } else {
                 users.put(socket, message);
                 String welcome = "Bienvenue ! Pour afficher la liste"
                         + " des commandes, tapez #.";
                 sendMessage(socket, welcome);
-//                CharBuffer c = CharBuffer.wrap(welcome);
-//                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//                ByteBuffer buf = encoder.encode(c);
-//                socket.write(buf);
             }
         }
 
@@ -152,10 +137,6 @@ public class Server {
                     + "#delete A \t: supprimer la chatroom A \n"
                     + "------------------------------\n";
             sendMessage(socket, cmd);
-//            CharBuffer c = CharBuffer.wrap(cmd);
-//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//            ByteBuffer buf = encoder.encode(c);
-//            socket.write(buf);
         } else if (message.equals("#disconnect")) {
             removeUser(socket);
             socket.close();
@@ -180,10 +161,6 @@ public class Server {
             String error = "Commande non reconnue. Taper # pour "
                     + "afficher la liste des commandes.";
             sendMessage(socket, error);
-//            CharBuffer c = CharBuffer.wrap(error);
-//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//            ByteBuffer buf = encoder.encode(c);
-//            socket.write(buf);
         }
     }
 
@@ -257,10 +234,6 @@ public class Server {
             }
         }
         sendMessage(socket, nameList);
-//        c = CharBuffer.wrap(nameList);
-//        ByteBuffer buf = ByteBuffer.allocate(2000);
-//        buf = encoder.encode(c);
-//        socket.write(buf);
     }
 
     public void handleListC(SocketChannel socket) throws CharacterCodingException, IOException {
@@ -269,11 +242,6 @@ public class Server {
             chatroomList = chatroomList + chatroom + " ";
         }
         sendMessage(socket, chatroomList);
-//        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//        CharBuffer c = CharBuffer.wrap(chatroomList);
-//        ByteBuffer buf = ByteBuffer.allocate(2000);
-//        buf = encoder.encode(c);
-//        socket.write(buf);
     }
 
     public void removeUser(SocketChannel socket) throws IOException {
@@ -299,16 +267,8 @@ public class Server {
         if (!usersInChatroom.containsKey(socket)) {
             String error = "Vous n'êtes dans aucune chatroom.";
             sendMessage(socket, error);
-//            CharBuffer c = CharBuffer.wrap(error);
-//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//            ByteBuffer buf = encoder.encode(c);
-//            socket.write(buf);
         } else {
             sendMessage(socket, usersInChatroom.get(socket));
-//            CharBuffer c = CharBuffer.wrap(usersInChatroom.get(socket));
-//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//            ByteBuffer buf = encoder.encode(c);
-//            socket.write(buf);
         }
     }
 
@@ -316,10 +276,6 @@ public class Server {
         if (!usersInChatroom.containsKey(socket)) {
             String error = "Vous n'êtes dans aucune chatroom.";
             sendMessage(socket, error);
-//            CharBuffer c = CharBuffer.wrap(error);
-//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//            ByteBuffer buf = encoder.encode(c);
-//            socket.write(buf);
         } else {
             sendList(socket);
         }
@@ -327,16 +283,15 @@ public class Server {
 
     public void handleJoin(SocketChannel socket, String chatroom) throws IOException {
         if (chatrooms.containsKey(chatroom)) {
+            String before = usersInChatroom.get(socket);
             usersInChatroom.put(socket, chatroom);
             String username = users.get(socket);
+            if (!before.equals(chatroom)){
             broadcastServerMessage(chatroom, username + " a rejoint la chatroom !");
+            }
         } else {
             String error = "Cette chatroom n'existe pas. Peut-être vouliez-vous la créer ?";
             sendMessage(socket, error);
-//            CharBuffer c = CharBuffer.wrap(error);
-//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//            ByteBuffer buf = encoder.encode(c);
-//            socket.write(buf);
         }
     }
 
@@ -348,10 +303,6 @@ public class Server {
         } else {
             String error = "Une chatroom existe déjà sous ce nom. Peut-être vouliez-vous la rejoindre ?";
             sendMessage(socket, error);
-//            CharBuffer c = CharBuffer.wrap(error);
-//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//            ByteBuffer buf = encoder.encode(c);
-//            socket.write(buf);
         }
     }
 
@@ -364,10 +315,6 @@ public class Server {
         } else {
             String error = "Vous n'êtes actuellement dans aucune chatroom.";
             sendMessage(socket, error);
-//            CharBuffer c = CharBuffer.wrap(error);
-//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//            ByteBuffer buf = encoder.encode(c);
-//            socket.write(buf);
         }
     }
 
@@ -387,18 +334,10 @@ public class Server {
             } else {
                 String error = "Vous n'avez pas le droit de supprimer cette chatroom.";
                 sendMessage(socket, error);
-//                CharBuffer c = CharBuffer.wrap(error);
-//                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//                ByteBuffer buf = encoder.encode(c);
-//                socket.write(buf);
             }
         } else {
             String error = "Cette chatroom n'existe pas.";
             sendMessage(socket, error);
-//            CharBuffer c = CharBuffer.wrap(error);
-//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//            ByteBuffer buf = encoder.encode(c);
-//            socket.write(buf);
         }
     }
 
