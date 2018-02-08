@@ -73,15 +73,27 @@ public class Server {
 
             //key.interestOps(SelectionKey.OP_ACCEPT);
             String welcome = "Bonjour ! Veuillez choisir un pseudo.";
-            CharBuffer c = CharBuffer.wrap(welcome);
-            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-            ByteBuffer buf = encoder.encode(c);
-            sc.write(buf);
+            sendMessage(sc, welcome);
+//            CharBuffer c = CharBuffer.wrap(welcome);
+//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//            ByteBuffer buf = encoder.encode(c);
+//            try {
+//                sc.write(buf);
+//            } catch (Exception e) {
+//            }
 
         } else if (key.isReadable()) {
             SocketChannel sc = (SocketChannel) key.channel();
             key.interestOps(SelectionKey.OP_READ);
-            listen(sc);
+            try {
+                listen(sc);
+            } catch (Exception e) {
+                try {
+                    removeUser(sc);
+                } catch (Exception a) {
+
+                }
+            }
         }
     }
 
@@ -101,18 +113,20 @@ public class Server {
         } else {
             if (users.containsValue(message)) {
                 String alert = "Le pseudo est déjà pris. Merci d'en choisir un autre.";
-                CharBuffer c = CharBuffer.wrap(alert);
-                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-                ByteBuffer buf = encoder.encode(c);
-                socket.write(buf);
+                sendMessage(socket, alert);
+//                CharBuffer c = CharBuffer.wrap(alert);
+//                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//                ByteBuffer buf = encoder.encode(c);
+//                socket.write(buf);
             } else {
                 users.put(socket, message);
                 String welcome = "Bienvenue ! Pour afficher la liste"
                         + " des commandes, tapez #.";
-                CharBuffer c = CharBuffer.wrap(welcome);
-                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-                ByteBuffer buf = encoder.encode(c);
-                socket.write(buf);
+                sendMessage(socket, welcome);
+//                CharBuffer c = CharBuffer.wrap(welcome);
+//                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//                ByteBuffer buf = encoder.encode(c);
+//                socket.write(buf);
             }
         }
 
@@ -131,97 +145,45 @@ public class Server {
                     + "#disconnect \t: se déconnecter \n"
                     + "#list_u \t: afficher la liste des utilisateurs connectés \n"
                     + "#list_c \t: afficher la liste des chatrooms ouvertes \n"
+                    + "#show_c \t: afficher la chatroom actuelle \n"
                     + "#create A \t: créer la chatroom A \n"
                     + "#join A \t: rejoindre la chatroom A \n"
                     + "#leave \t\t: partir de la chatroom actuelle \n"
                     + "#delete A \t: supprimer la chatroom A \n"
                     + "------------------------------\n";
-            CharBuffer c = CharBuffer.wrap(cmd);
-            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-            ByteBuffer buf = encoder.encode(c);
-            socket.write(buf);
-        } else if (message.startsWith("#disconnect")) {
+            sendMessage(socket, cmd);
+//            CharBuffer c = CharBuffer.wrap(cmd);
+//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//            ByteBuffer buf = encoder.encode(c);
+//            socket.write(buf);
+        } else if (message.equals("#disconnect")) {
             removeUser(socket);
             socket.close();
-        } else if (message.startsWith("#list_u")) {
-            if (!usersInChatroom.containsKey(socket)) {
-                String error = "Vous n'êtes dans aucune chatroom.";
-                CharBuffer c = CharBuffer.wrap(error);
-                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-                ByteBuffer buf = encoder.encode(c);
-                socket.write(buf);
-            } else {
-                sendList(socket);
-            }
-        } else if (message.startsWith("#list_c")) {
-            sendChatroomList(socket);
+        } else if (message.equals("#show_c")) {
+            handleShowC(socket);
+        } else if (message.equals("#list_u")) {
+            handleListU(socket);
+        } else if (message.equals("#list_c")) {
+            handleListC(socket);
         } else if (message.startsWith("#join")) {
             String chatroom = message.substring(6).trim();
-            if (chatrooms.containsKey(chatroom)) {
-                usersInChatroom.put(socket, chatroom);
-            } else {
-                String error = "Cette chatroom n'existe pas. Peut-être vouliez-vous la créer ?";
-                CharBuffer c = CharBuffer.wrap(error);
-                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-                ByteBuffer buf = encoder.encode(c);
-                socket.write(buf);
-            }
-
+            handleJoin(socket, chatroom);
         } else if (message.startsWith("#create")) {
             String chatroom = message.substring(8).trim();
-            //on rajoute l'utilisateur comme admin
-            if (!chatrooms.containsKey(chatroom)) {
-                chatrooms.putIfAbsent(chatroom, socket);
-                usersInChatroom.put(socket, chatroom);
-            } else {
-                String error = "Une chatroom existe déjà sous ce nom. Peut-être vouliez-vous la rejoindre ?";
-                CharBuffer c = CharBuffer.wrap(error);
-                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-                ByteBuffer buf = encoder.encode(c);
-                socket.write(buf);
-            }
-
-        } else if (message.startsWith("#leave")) {
-            if (usersInChatroom.size() > 0 && usersInChatroom.containsKey(socket)) {
-                usersInChatroom.remove(socket);
-            } else {
-                String error = "Vous n'êtes actuellement dans aucune chatroom.";
-                CharBuffer c = CharBuffer.wrap(error);
-                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-                ByteBuffer buf = encoder.encode(c);
-                socket.write(buf);
-            }
+            handleCreate(socket, chatroom);
+        } else if (message.equals("#leave")) {
+            handleLeave(socket);
         } else if (message.startsWith("#delete")) {
             String chatroom = message.substring(8).trim();
-            if (chatrooms.containsKey(chatroom)) {
-                if (chatrooms.get(chatroom) == socket) {
-                    chatrooms.remove(chatroom);
-                    for (Map.Entry<SocketChannel, String> entry : usersInChatroom.entrySet()) {
-                        if (entry.getValue().equals(chatroom)) {
-                            usersInChatroom.remove(entry.getKey());
-                        }
-                    }
-                } else {
-                    String error = "Vous n'avez pas le droit de supprimer cette chatroom.";
-                    CharBuffer c = CharBuffer.wrap(error);
-                    CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-                    ByteBuffer buf = encoder.encode(c);
-                    socket.write(buf);
-                }
-            } else {
-                String error = "Cette chatroom n'existe pas.";
-                CharBuffer c = CharBuffer.wrap(error);
-                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-                ByteBuffer buf = encoder.encode(c);
-                socket.write(buf);
-            }
+            handleDelete(socket, chatroom);
         } else {
             String error = "Commande non reconnue. Taper # pour "
                     + "afficher la liste des commandes.";
-            CharBuffer c = CharBuffer.wrap(error);
-            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-            ByteBuffer buf = encoder.encode(c);
-            socket.write(buf);
+            sendMessage(socket, error);
+//            CharBuffer c = CharBuffer.wrap(error);
+//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//            ByteBuffer buf = encoder.encode(c);
+//            socket.write(buf);
         }
     }
 
@@ -233,7 +195,7 @@ public class Server {
         ByteBuffer buf = encoder.encode(c);
 
         if (!usersInChatroom.containsKey(sourceSocket)) {
-            String error = "Vous n'êtes dans aucune chatroom. Merci d'en joindre une"
+            String error = "Vous n'êtes dans aucune chatroom. Merci d'en joindre"
                     + " ou d'en créer une.";
             c = CharBuffer.wrap(error);
             encoder = Charset.forName("UTF-8").newEncoder();
@@ -259,27 +221,25 @@ public class Server {
         }
     }
 
-    public void broadcastServerMessage(SocketChannel sourceSocket, String m) throws CharacterCodingException, IOException {
+    public void broadcastServerMessage(String chatroom, String m) throws CharacterCodingException, IOException {
         CharBuffer c = CharBuffer.wrap(m);
         CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
         ByteBuffer buf = encoder.encode(c);
-        if (usersInChatroom.containsKey(sourceSocket)) {
-            String chatroom = usersInChatroom.get(sourceSocket);
-            for (SelectionKey key : selector.keys()) {
-                if (!(key.channel() instanceof SocketChannel)) {
-                    continue;
-                }
-                SocketChannel socket = (SocketChannel) key.channel();
-                if (!users.containsKey(socket)) {
-                    continue;
-                }
-                if (!usersInChatroom.get(socket).equals(chatroom)) {
-                    continue;
-                }
-                socket.write(buf);
-                buf.rewind();
+        for (SelectionKey key : selector.keys()) {
+            if (!(key.channel() instanceof SocketChannel)) {
+                continue;
             }
+            SocketChannel socket = (SocketChannel) key.channel();
+            if (!users.containsKey(socket)) {
+                continue;
+            }
+            if (!usersInChatroom.get(socket).equals(chatroom)) {
+                continue;
+            }
+            socket.write(buf);
+            buf.rewind();
         }
+
     }
 
     public void sendList(SocketChannel socket) throws CharacterCodingException, IOException {
@@ -296,28 +256,159 @@ public class Server {
                 nameList = nameList + username + " ";
             }
         }
-        c = CharBuffer.wrap(nameList);
-        ByteBuffer buf = ByteBuffer.allocate(2000);
-        buf = encoder.encode(c);
-        socket.write(buf);
+        sendMessage(socket, nameList);
+//        c = CharBuffer.wrap(nameList);
+//        ByteBuffer buf = ByteBuffer.allocate(2000);
+//        buf = encoder.encode(c);
+//        socket.write(buf);
     }
 
-    public void sendChatroomList(SocketChannel socket) throws CharacterCodingException, IOException {
+    public void handleListC(SocketChannel socket) throws CharacterCodingException, IOException {
         String chatroomList = "";
         for (String chatroom : chatrooms.keySet()) {
             chatroomList = chatroomList + chatroom + " ";
         }
-        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-        CharBuffer c = CharBuffer.wrap(chatroomList);
-        ByteBuffer buf = ByteBuffer.allocate(2000);
-        buf = encoder.encode(c);
-        socket.write(buf);
+        sendMessage(socket, chatroomList);
+//        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//        CharBuffer c = CharBuffer.wrap(chatroomList);
+//        ByteBuffer buf = ByteBuffer.allocate(2000);
+//        buf = encoder.encode(c);
+//        socket.write(buf);
     }
 
     public void removeUser(SocketChannel socket) throws IOException {
         String username = users.get(socket);
+        String chatroom = usersInChatroom.get(socket);
         users.remove(socket);
-        broadcastServerMessage(socket, username + " s'est déconnecté.");
+        usersInChatroom.remove(socket);
+        broadcastServerMessage(chatroom, username + " s'est déconnecté.");
+        //s'il était admin de chatrooms : on kick tout le monde et on ferme
+        //on cherche les chatrooms dont il était admin
+        Map<String, SocketChannel> cr = new HashMap<String, SocketChannel>();
+        Map<SocketChannel, String> uic = new HashMap<SocketChannel, String>();
+        handleDelete(socket, chatroom);
     }
 
+    public void kickUser(String chatroom, SocketChannel socket) throws IOException {
+        String username = users.get(socket);
+        usersInChatroom.remove(socket);
+        broadcastServerMessage(chatroom, username + " a été viré de la chatroom.");
+    }
+
+    public void handleShowC(SocketChannel socket) throws IOException {
+        if (!usersInChatroom.containsKey(socket)) {
+            String error = "Vous n'êtes dans aucune chatroom.";
+            sendMessage(socket, error);
+//            CharBuffer c = CharBuffer.wrap(error);
+//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//            ByteBuffer buf = encoder.encode(c);
+//            socket.write(buf);
+        } else {
+            sendMessage(socket, usersInChatroom.get(socket));
+//            CharBuffer c = CharBuffer.wrap(usersInChatroom.get(socket));
+//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//            ByteBuffer buf = encoder.encode(c);
+//            socket.write(buf);
+        }
+    }
+
+    public void handleListU(SocketChannel socket) throws IOException {
+        if (!usersInChatroom.containsKey(socket)) {
+            String error = "Vous n'êtes dans aucune chatroom.";
+            sendMessage(socket, error);
+//            CharBuffer c = CharBuffer.wrap(error);
+//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//            ByteBuffer buf = encoder.encode(c);
+//            socket.write(buf);
+        } else {
+            sendList(socket);
+        }
+    }
+
+    public void handleJoin(SocketChannel socket, String chatroom) throws IOException {
+        if (chatrooms.containsKey(chatroom)) {
+            usersInChatroom.put(socket, chatroom);
+            String username = users.get(socket);
+            broadcastServerMessage(chatroom, username + " a rejoint la chatroom !");
+        } else {
+            String error = "Cette chatroom n'existe pas. Peut-être vouliez-vous la créer ?";
+            sendMessage(socket, error);
+//            CharBuffer c = CharBuffer.wrap(error);
+//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//            ByteBuffer buf = encoder.encode(c);
+//            socket.write(buf);
+        }
+    }
+
+    public void handleCreate(SocketChannel socket, String chatroom) throws IOException {
+        //on rajoute l'utilisateur comme admin
+        if (!chatrooms.containsKey(chatroom)) {
+            chatrooms.putIfAbsent(chatroom, socket);
+            usersInChatroom.put(socket, chatroom);
+        } else {
+            String error = "Une chatroom existe déjà sous ce nom. Peut-être vouliez-vous la rejoindre ?";
+            sendMessage(socket, error);
+//            CharBuffer c = CharBuffer.wrap(error);
+//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//            ByteBuffer buf = encoder.encode(c);
+//            socket.write(buf);
+        }
+    }
+
+    public void handleLeave(SocketChannel socket) throws IOException {
+        if (usersInChatroom.size() > 0 && usersInChatroom.containsKey(socket)) {
+            String chatroom = usersInChatroom.get(socket);
+            String username = users.get(socket);
+            usersInChatroom.remove(socket);
+            broadcastServerMessage(chatroom, username + " a quitté la chatroom.");
+        } else {
+            String error = "Vous n'êtes actuellement dans aucune chatroom.";
+            sendMessage(socket, error);
+//            CharBuffer c = CharBuffer.wrap(error);
+//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//            ByteBuffer buf = encoder.encode(c);
+//            socket.write(buf);
+        }
+    }
+
+    public void handleDelete(SocketChannel socket, String chatroom) throws IOException {
+        //si la chatroom existe
+        if (chatrooms.containsKey(chatroom)) {
+            //et qu'il est admin de cette chatroom
+            if (chatrooms.get(chatroom) == socket) {
+                chatrooms.remove(chatroom);
+                Map<SocketChannel, String> uic = new HashMap<SocketChannel, String>();
+                for (Map.Entry<SocketChannel, String> entry : usersInChatroom.entrySet()) {
+                    if (!entry.getValue().equals(chatroom)) {
+                        uic.put(entry.getKey(), entry.getValue());
+                    }
+                }
+                usersInChatroom = uic;
+            } else {
+                String error = "Vous n'avez pas le droit de supprimer cette chatroom.";
+                sendMessage(socket, error);
+//                CharBuffer c = CharBuffer.wrap(error);
+//                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//                ByteBuffer buf = encoder.encode(c);
+//                socket.write(buf);
+            }
+        } else {
+            String error = "Cette chatroom n'existe pas.";
+            sendMessage(socket, error);
+//            CharBuffer c = CharBuffer.wrap(error);
+//            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//            ByteBuffer buf = encoder.encode(c);
+//            socket.write(buf);
+        }
+    }
+
+    public void sendMessage(SocketChannel socket, String m) throws CharacterCodingException {
+        CharBuffer c = CharBuffer.wrap(m);
+        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+        ByteBuffer buf = encoder.encode(c);
+        try {
+            socket.write(buf);
+        } catch (Exception e) {
+        }
+    }
 }

@@ -30,7 +30,7 @@ public class ListenThread implements Runnable {
     public void run(){
         try {
             //System.out.println("MyThread running");
-            while (true){
+            while (client.getSocket().isConnected()){
             Thread.sleep(100);
             client.receiveMsg();
         }

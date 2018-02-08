@@ -49,22 +49,9 @@ public class Client {
                 if (msg.startsWith("#list_u")) {
                     System.out.println(msg.substring(7));
                 }
-//            else if (msg.contains("#")){
-//                int compteur = Integer.parseInt(msg.substring(0, msg.indexOf("#")));
-//
-//                if (cmpt == compteur - 1) {
-//                    cmpt = compteur;
-//                    //sendLastAck();
-//                    msg = msg.substring(msg.indexOf("#") + 1);
-//                    System.out.println(msg);
-//                } else {
-//                    sendLastAck();
-//
-//                }
-//            }
             }
         } catch (IOException e) {
-            System.out.println("");
+            socketC.close();
         }
 
     }
@@ -82,8 +69,13 @@ public class Client {
         CharBuffer c = CharBuffer.wrap(msg);
         CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
         ByteBuffer buf = encoder.encode(c);
+        try{
         socketC.write(buf);
-
+        }
+        catch (Exception e){
+            System.out.println("Le serveur a crashé.");
+            socketC.close();
+        }
     }
 
     public void disconnect() throws IOException {
@@ -93,5 +85,8 @@ public class Client {
         buf = encoder.encode(c);
         socketC.write(buf);
         socketC.close();
+    }
+    public SocketChannel getSocket(){
+        return socketC;
     }
 }

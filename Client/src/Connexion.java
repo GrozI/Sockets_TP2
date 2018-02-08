@@ -25,7 +25,7 @@ public class Connexion {
         t.start();
         Scanner scanner = new Scanner(System.in);
         boolean connecte = true;
-        while (connecte) {
+        while (client.getSocket().isConnected() && connecte) {
             String message = scanner.next();
             message += scanner.nextLine();
             if (message.startsWith("#disconnect")) {
