@@ -73,7 +73,11 @@ public class Server {
 
             //key.interestOps(SelectionKey.OP_ACCEPT);
             String welcome = "Bonjour ! Veuillez choisir un pseudo.";
-            sendMessage(sc, welcome);
+            try {
+                sendMessage(sc, welcome);
+            } catch (Exception e) {
+
+            }
 
         } else if (key.isReadable()) {
             SocketChannel sc = (SocketChannel) key.channel();
@@ -82,7 +86,9 @@ public class Server {
                 listen(sc);
             } catch (Exception e) {
                 try {
-                    removeUser(sc);
+                    if (!sc.isConnected()) {
+                        removeUser(sc);
+                    }
                 } catch (Exception a) {
 
                 }
@@ -103,16 +109,14 @@ public class Server {
                 Message m = handleMessage(socket, message);
                 broadcastMessage(socket, m);
             }
+        } else if (users.containsValue(message)) {
+            String alert = "Le pseudo est déjà pris. Merci d'en choisir un autre.";
+            sendMessage(socket, alert);
         } else {
-            if (users.containsValue(message)) {
-                String alert = "Le pseudo est déjà pris. Merci d'en choisir un autre.";
-                sendMessage(socket, alert);
-            } else {
-                users.put(socket, message);
-                String welcome = "Bienvenue ! Pour afficher la liste"
-                        + " des commandes, tapez #.";
-                sendMessage(socket, welcome);
-            }
+            users.put(socket, message);
+            String welcome = "Bienvenue ! Pour afficher la liste"
+                    + " des commandes, tapez #.";
+            sendMessage(socket, welcome);
         }
 
     }
@@ -283,11 +287,14 @@ public class Server {
 
     public void handleJoin(SocketChannel socket, String chatroom) throws IOException {
         if (chatrooms.containsKey(chatroom)) {
-            String before = usersInChatroom.get(socket);
+            String before = "";
+            if (usersInChatroom.containsKey(socket)) {
+                before = usersInChatroom.get(socket);
+            }
             usersInChatroom.put(socket, chatroom);
             String username = users.get(socket);
-            if (!before.equals(chatroom)){
-            broadcastServerMessage(chatroom, username + " a rejoint la chatroom !");
+            if (!before.equals(chatroom)) {
+                broadcastServerMessage(chatroom, username + " a rejoint la chatroom !");
             }
         } else {
             String error = "Cette chatroom n'existe pas. Peut-être vouliez-vous la créer ?";
